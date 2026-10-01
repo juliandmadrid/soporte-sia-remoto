@@ -38,6 +38,28 @@ lazy_static::lazy_static! {
     static ref TEXTURE_RENDER_KEY: Arc<AtomicI32> = Arc::new(AtomicI32::new(0));
 }
 
+/// Soporte SIA: el equipo se atiende sin nadie al frente. Entra solo quien tenga la clave
+/// permanente (que viene en la compilacion) y nunca se pide "Aceptar" en la pantalla.
+#[cfg(target_os = "android")]
+fn soporte_sia_config() {
+    for (k, v) in [
+        ("verification-method", "use-permanent-password"),
+        ("approve-mode", "password"),
+    ] {
+        // primero al archivo (persiste), luego fijo en memoria (la UI no lo puede cambiar)
+        config::Config::set_option(k.to_owned(), v.to_owned());
+        config::OVERWRITE_SETTINGS
+            .write()
+            .unwrap()
+            .insert(k.to_owned(), v.to_owned());
+    }
+    if let Some(clave) = option_env!("SOPORTE_CLAVE") {
+        if !clave.is_empty() && !config::Config::has_permanent_password() {
+            config::Config::set_permanent_password(clave);
+        }
+    }
+}
+
 fn initialize(app_dir: &str, custom_client_config: &str) {
     flutter::async_tasks::start_flutter_async_runner();
     // `APP_DIR` is set in `main_get_data_dir_ios()` on iOS.
@@ -51,6 +73,8 @@ fn initialize(app_dir: &str, custom_client_config: &str) {
     } else {
         crate::read_custom_client(custom_client_config);
     }
+    #[cfg(target_os = "android")]
+    soporte_sia_config();
     #[cfg(target_os = "android")]
     {
         // flexi_logger can't work when android_logger initialized.

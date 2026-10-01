@@ -119,7 +119,9 @@ jobs:
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+          SOPORTE_CLAVE: ${{ secrets.SOPORTE_CLAVE }}
         run: |
+          test -n "$SOPORTE_CLAVE" || { echo "falta el secret SOPORTE_CLAVE"; exit 1; }
           rustup target add aarch64-linux-android
           cargo install cargo-ndk --version ${{ env.CARGO_NDK_VERSION }} --locked
           ./flutter/ndk_arm64.sh
