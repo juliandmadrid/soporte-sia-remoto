@@ -2995,6 +2995,8 @@ pub mod server_side {
                 crate::read_custom_client(&custom_client_config);
             }
         }
+        // El servicio arranca sin la UI (al encender): la config de Soporte SIA va aqui tambien
+        super::soporte_sia_config();
         std::thread::spawn(move || start_server(true));
     }
 
