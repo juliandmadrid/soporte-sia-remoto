@@ -34,6 +34,12 @@ if (flutterVersionName == null) {
 
 // Add rustls-platform-verifier Android support
 String findRustlsPlatformVerifierMavenDir() {
+    // Soporte SIA: compilando en un PC sin Rust (compilar-remoto-local.sh) se pasa la
+    // carpeta maven del crate ya bajado, en vez de preguntarle a cargo.
+    def local = System.getenv("RUSTLS_VERIFIER_MAVEN")
+    if (local) {
+        return local
+    }
     def dependencyText = providers.exec {
         it.workingDir = new File("../..")
         commandLine("cargo", "metadata", "--format-version", "1")
