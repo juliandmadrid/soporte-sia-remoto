@@ -88,6 +88,18 @@ class MainService : Service() {
         }
     }
 
+    /**
+     * Soporte SIA: con la pantalla apagada y quieta Android no manda ningun cuadro y el
+     * PC se queda en "Conectado, esperando imagen". Prenderla al aceptar la sesion saca
+     * el primero (probado en el A5x el 2 oct). Despues se apaga sola por el timeout normal.
+     */
+    private fun despertarPantalla() {
+        if (powerManager.isInteractive) return
+        Log.d(logTag, "Soporte SIA: prendiendo pantalla para la sesion")
+        if (wakeLock.isHeld) wakeLock.release()
+        wakeLock.acquire(10_000)
+    }
+
     @Keep
     @RequiresApi(Build.VERSION_CODES.N)
     fun rustKeyEventInput(input: ByteArray) {
@@ -128,6 +140,9 @@ class MainService : Service() {
                         translate("Share screen")
                     }
                     if (authorized) {
+                        if (!isFileTransfer) {
+                            despertarPantalla()
+                        }
                         if (!isFileTransfer && !isStart) {
                             startCapture()
                         }
@@ -575,7 +590,13 @@ class MainService : Service() {
             return true
         }
         if (mediaProjection == null) {
-            Log.w(logTag, "startCapture fail,mediaProjection is null")
+            // Soporte SIA: otra app o el sistema le quito la captura. En vez de quedarse
+            // sin imagen la pide de nuevo (con PROJECT_MEDIA=allow Android la da en
+            // silencio) y replaceMediaProjection reanuda la captura al recibirla.
+            Log.w(logTag, "startCapture: sin mediaProjection, se pide de nuevo")
+            captureRestartPending = true
+            captureRestartInVoiceCall = inVoiceCall
+            requestMediaProjection(true)
             return false
         }
         captureRestartInVoiceCall = inVoiceCall
