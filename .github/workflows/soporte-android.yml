@@ -2,10 +2,12 @@
 # Recortado de flutter-build.yml (job build-rustdesk-android) de upstream.
 name: Soporte SIA - Android
 
+# Solo manual: el binario lleva la clave permanente (SOPORTE_CLAVE) y en un repo publico
+# los artifacts los baja cualquiera con cuenta de GitHub (borrados el 5 oct). Mientras la
+# clave no salga del binario, compilar en el PC (compilar-remoto-local.sh) y, si se corre
+# esto, borrar los artifacts apenas se descarguen.
 on:
   workflow_dispatch:
-  push:
-    branches: [soporte]
 
 env:
   RUST_VERSION: "1.75"

@@ -265,7 +265,15 @@ class MainService : Service() {
 
         // keep the config dir same with flutter
         val prefs = applicationContext.getSharedPreferences(KEY_SHARED_PREFERENCES, FlutterActivity.MODE_PRIVATE)
-        val configPath = prefs.getString(KEY_APP_DIR_CONFIG_PATH, "") ?: ""
+        var configPath = prefs.getString(KEY_APP_DIR_CONFIG_PATH, "") ?: ""
+        if (configPath.isEmpty()) {
+            // Soporte SIA: si la UI nunca se abrio (equipo que arranca solo al encender),
+            // la ruta venia vacia y el ID/llaves no se guardaban: cada encendido salia un
+            // ID nuevo (Montebonito, 2-5 oct). Es la misma carpeta que usa Flutter
+            // (getApplicationDocumentsDirectory = getDir("flutter")).
+            configPath = applicationContext.getDir("flutter", Context.MODE_PRIVATE).absolutePath
+            prefs.edit().putString(KEY_APP_DIR_CONFIG_PATH, configPath).apply()
+        }
         val homePath = applicationContext.getExternalFilesDir(null)?.absolutePath
             ?: applicationContext.filesDir.absolutePath
         FFI.startServer(configPath, homePath, "")
