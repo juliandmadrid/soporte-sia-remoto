@@ -3074,6 +3074,15 @@ pub mod server_side {
         return env.new_string(res).unwrap_or_default().into_raw();
     }
 
+    /// Soporte SIA: el ID de este equipo, para que el Agente SIA lo suba al panel.
+    /// Solo despues de startServer: antes APP_DIR esta vacio y el ID saldria de otra ruta.
+    #[no_mangle]
+    pub unsafe extern "system" fn Java_ffi_FFI_getMyId(env: JNIEnv, _class: JClass) -> jstring {
+        env.new_string(config::Config::get_id())
+            .unwrap_or_default()
+            .into_raw()
+    }
+
     #[no_mangle]
     pub unsafe extern "system" fn Java_ffi_FFI_isServiceClipboardEnabled(
         env: JNIEnv,

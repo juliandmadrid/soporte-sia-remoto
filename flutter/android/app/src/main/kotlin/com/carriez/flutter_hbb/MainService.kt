@@ -277,11 +277,32 @@ class MainService : Service() {
         val homePath = applicationContext.getExternalFilesDir(null)?.absolutePath
             ?: applicationContext.filesDir.absolutePath
         FFI.startServer(configPath, homePath, "")
+        serviceHandler?.postDelayed(avisarId, 5_000)
 
         createForegroundNotification()
     }
 
+    // Soporte SIA: el ID va al Agente SIA, que lo sube al panel (antes se escribia a mano).
+    // A los 5 s, al minuto (el servidor lo puede cambiar al registrarlo) y luego cada 15 min.
+    // Solo lo recibe una app firmada con la llave de la flota (permiso co.siaph.permission.FLOTA).
+    private var avisosId = 0
+    private val avisarId = object : Runnable {
+        override fun run() {
+            val id = try { FFI.getMyId() } catch (e: Throwable) { "" }
+            if (id.isNotEmpty()) {
+                sendBroadcast(
+                    Intent("co.siaph.soporte.ID_REMOTO")
+                        .setClassName("co.siaph.soporte", "co.siaph.soporte.IdRemotoReceiver")
+                        .putExtra("id", id)
+                )
+            }
+            avisosId++
+            serviceHandler?.postDelayed(this, if (avisosId == 1) 55_000L else 15 * 60_000L)
+        }
+    }
+
     override fun onDestroy() {
+        serviceHandler?.removeCallbacks(avisarId)
         checkMediaPermission()
         stopService(Intent(this, FloatingWindowService::class.java))
         super.onDestroy()
