@@ -146,6 +146,7 @@ class MainService : Service() {
                         if (!isFileTransfer && !isStart) {
                             startCapture()
                         }
+                        if (!isFileTransfer) AvisoMantenimiento.mostrar(this)
                         onClientAuthorizedNotification(id, type, username, peerId)
                     } else {
                         loginRequestNotification(id, type, username, peerId)
@@ -183,6 +184,7 @@ class MainService : Service() {
             }
             "stop_capture" -> {
                 Log.d(logTag, "from rust:stop_capture")
+                AvisoMantenimiento.quitar(this)
                 stopCapture()
             }
             "half_scale" -> {
@@ -303,6 +305,7 @@ class MainService : Service() {
 
     override fun onDestroy() {
         serviceHandler?.removeCallbacks(avisarId)
+        AvisoMantenimiento.quitar(this)
         checkMediaPermission()
         stopService(Intent(this, FloatingWindowService::class.java))
         super.onDestroy()
