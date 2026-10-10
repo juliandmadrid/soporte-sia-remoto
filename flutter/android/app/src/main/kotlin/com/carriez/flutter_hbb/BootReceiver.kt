@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import com.hjq.permissions.XXPermissions
 import io.flutter.embedding.android.FlutterActivity
 
@@ -39,7 +38,8 @@ class BootReceiver : BroadcastReceiver() {
                 action = ACT_INIT_MEDIA_PROJECTION_AND_SERVICE
                 putExtra(EXT_INIT_FROM_BOOT, true)
             }
-            Toast.makeText(context, "RustDesk is Open", Toast.LENGTH_LONG).show()
+            // Soporte SIA: sin el aviso "RustDesk is Open": salia en la pantalla del portero cada vez
+            // que el agente revivia el remoto (Caeli/San Diego 2, 10 oct).
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(it)
             } else {
