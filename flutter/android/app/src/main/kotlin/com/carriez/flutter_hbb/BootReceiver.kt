@@ -29,9 +29,10 @@ class BootReceiver : BroadcastReceiver() {
                 return
             }
             // check pre-permission
+            // Soporte SIA: arranca igual. Antes, sin superposicion o sin la excepcion de bateria, no
+            // arrancaba y no avisaba: San Diego 2 quedaba muerto tras cada reinicio (10 oct).
             if (!XXPermissions.isGranted(context, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, SYSTEM_ALERT_WINDOW)){
-                Log.d(logTag, "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS or SYSTEM_ALERT_WINDOW is not granted")
-                return
+                Log.d(logTag, "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS or SYSTEM_ALERT_WINDOW is not granted: se arranca igual")
             }
 
             val it = Intent(context, MainService::class.java).apply {

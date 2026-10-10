@@ -63,6 +63,7 @@ const val VIDEO_KEY_FRAME_RATE = 30
 
 class MainService : Service() {
 
+
     @Keep
     @RequiresApi(Build.VERSION_CODES.N)
     fun rustPointerInput(kind: Int, mask: Int, x: Int, y: Int) {
@@ -146,7 +147,11 @@ class MainService : Service() {
                         if (!isFileTransfer && !isStart) {
                             startCapture()
                         }
-                        if (!isFileTransfer) AvisoMantenimiento.mostrar(this)
+                        if (!isFileTransfer) {
+                            AvisoMantenimiento.mostrar(this)
+                            avisarSesion(true)
+                            enviarId(this)
+                        }
                         onClientAuthorizedNotification(id, type, username, peerId)
                     } else {
                         loginRequestNotification(id, type, username, peerId)
@@ -185,6 +190,7 @@ class MainService : Service() {
             "stop_capture" -> {
                 Log.d(logTag, "from rust:stop_capture")
                 AvisoMantenimiento.quitar(this)
+                avisarSesion(false)
                 stopCapture()
             }
             "half_scale" -> {
@@ -207,6 +213,19 @@ class MainService : Service() {
     private val wakeLock: PowerManager.WakeLock by lazy { powerManager.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "rustdesk:wakelock")}
 
     companion object {
+        /** El servicio esta corriendo (el motor arrancado). Si no, al agente no se le contesta: esta caido. */
+        @Volatile @JvmStatic var corriendo = false
+
+        @JvmStatic fun enviarId(ctx: Context) {
+            val id = try { FFI.getMyId() } catch (e: Throwable) { "" }
+            if (id.isEmpty()) return
+            ctx.sendBroadcast(
+                Intent("co.siaph.soporte.ID_REMOTO")
+                    .setClassName("co.siaph.soporte", "co.siaph.soporte.IdRemotoReceiver")
+                    .putExtra("id", id)
+            )
+        }
+
         private var _isReady = false // media permission ready status
         private var _isStart = false // screen capture start status
         private var _isAudioStart = false // audio capture start status
@@ -279,6 +298,7 @@ class MainService : Service() {
         val homePath = applicationContext.getExternalFilesDir(null)?.absolutePath
             ?: applicationContext.filesDir.absolutePath
         FFI.startServer(configPath, homePath, "")
+        corriendo = true
         serviceHandler?.postDelayed(avisarId, 5_000)
 
         createForegroundNotification()
@@ -287,25 +307,33 @@ class MainService : Service() {
     // Soporte SIA: el ID va al Agente SIA, que lo sube al panel (antes se escribia a mano).
     // A los 5 s, al minuto (el servidor lo puede cambiar al registrarlo) y luego cada 15 min.
     // Solo lo recibe una app firmada con la llave de la flota (permiso co.siaph.permission.FLOTA).
+    // El temporizador se duerme con el procesador (15 min se volvian horas): por eso el agente ademas
+    // lo PIDE en cada latido (PedirIdReceiver), con su alarma que si despierta al equipo (Caeli, 10 oct).
     private var avisosId = 0
     private val avisarId = object : Runnable {
         override fun run() {
-            val id = try { FFI.getMyId() } catch (e: Throwable) { "" }
-            if (id.isNotEmpty()) {
-                sendBroadcast(
-                    Intent("co.siaph.soporte.ID_REMOTO")
-                        .setClassName("co.siaph.soporte", "co.siaph.soporte.IdRemotoReceiver")
-                        .putExtra("id", id)
-                )
-            }
+            enviarId(this@MainService)
             avisosId++
             serviceHandler?.postDelayed(this, if (avisosId == 1) 55_000L else 15 * 60_000L)
         }
     }
 
+    // Soporte SIA: el control (InputService) solo va prendido durante una sesion; lo prende y
+    // apaga el Agente SIA. Prendido siempre, Android pasa TODOS los toques del dedo por el
+    // servicio y WhatsApp los descarta en el registro: pantalla "muerta" (CPH2725, 9 oct).
+    private fun avisarSesion(activa: Boolean) {
+        sendBroadcast(
+            Intent("co.siaph.soporte.SESION_REMOTA")
+                .setClassName("co.siaph.soporte", "co.siaph.soporte.SesionRemotaReceiver")
+                .putExtra("activa", activa)
+        )
+    }
+
     override fun onDestroy() {
+        corriendo = false
         serviceHandler?.removeCallbacks(avisarId)
         AvisoMantenimiento.quitar(this)
+        avisarSesion(false)
         checkMediaPermission()
         stopService(Intent(this, FloatingWindowService::class.java))
         super.onDestroy()

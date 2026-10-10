@@ -728,7 +728,13 @@ class InputService : AccessibilityService() {
         super.onServiceConnected()
         ctx = this
         notifyInputState()
-        val info = AccessibilityServiceInfo()
+        // Soporte SIA: partir de la info del XML (no de una vacia) para no perder isAccessibilityTool.
+        // Sin ser "herramienta", Android no deja que nuestros gestos toquen pantallas sensibles:
+        // WhatsApp en "Ingresa tu numero" no respondia desde el PC (Caeli, 10 oct).
+        // Lo demas igual que antes: sin eventos (la info vacia los dejaba en 0).
+        val info = serviceInfo ?: AccessibilityServiceInfo()
+        info.eventTypes = 0
+        info.notificationTimeout = 0
         if (Build.VERSION.SDK_INT >= 33) {
             info.flags = FLAG_INPUT_METHOD_EDITOR or FLAG_RETRIEVE_INTERACTIVE_WINDOWS
         } else {

@@ -41,6 +41,12 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true">
 
+        <!-- Soporte SIA: el agente pregunta si el servicio vive (solo la flota) -->
+        <receiver
+            android:name=".PedirIdReceiver"
+            android:exported="true"
+            android:permission="co.siaph.permission.FLOTA" />
+
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"

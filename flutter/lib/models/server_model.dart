@@ -400,9 +400,8 @@ class ServerModel with ChangeNotifier {
       }
     } else {
       await checkRequestNotificationPermission();
-      if (bind.mainGetLocalOption(key: kOptionDisableFloatingWindow) != 'Y') {
-        await checkFloatingWindowPermission();
-      }
+      // Soporte SIA: la superposicion NO se pide (abria Ajustes y trababa al agente, 10 oct).
+      // Sin ella solo falta el circulito flotante.
       final res = await parent.target?.dialogManager
           .show<bool>((setState, close, context) {
         submit() => close(true);
