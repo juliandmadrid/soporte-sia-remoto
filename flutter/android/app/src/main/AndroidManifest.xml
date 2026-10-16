@@ -37,7 +37,7 @@
     <application
         android:name=".MainApplication"
         android:icon="@mipmap/ic_launcher"
-        android:label="Soporte SIA"
+        android:label="Soporte Remoto SIA"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true">
 
@@ -66,7 +66,7 @@
             android:name=".InputService"
             android:enabled="true"
             android:exported="false"
-            android:label="Soporte SIA Control"
+            android:label="Soporte Remoto SIA Control"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -85,11 +85,12 @@
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
             android:windowSoftInputMode="adjustResize">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <!-- Soporte SIA: SIN icono en el cajon de apps. Antes tenia MAIN + LAUNCHER; se quito
+                 para que un guarda no pueda abrir "Soporte Remoto SIA" y tocar "Detener servicio"
+                 (16 oct). El Agente SIA la sigue abriendo por nombre de clase (exported=true) en
+                 Reenlace/Remoto, el servicio arranca en boot (BootReceiver) y las conexiones
+                 entrantes funcionan igual: no se pierde nada de control. Para abrirla a mano:
+                 adb shell am start -n co.siaph.remoto/com.carriez.flutter_hbb.MainActivity -->
 
             <!-- Intent for deep linking-->
             <intent-filter>
