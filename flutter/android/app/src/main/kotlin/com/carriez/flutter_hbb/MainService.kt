@@ -915,19 +915,10 @@ class MainService : Service() {
         notificationBuilder = NotificationCompat.Builder(this, notificationChannel)
     }
 
-    @SuppressLint("UnspecifiedImmutableFlag")
+    // Soporte SIA: tocar la notificacion ya NO abre la app. Antes abria la pantalla con "Detener servicio"
+    // y un guarda dejaba el equipo sin remoto (16 oct). Como el builder es compartido, tampoco la abren
+    // los avisos de conexion. El Agente SIA la sigue abriendo por clase (Reenlace).
     private fun createForegroundNotification() {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            putExtra("type", type)
-        }
-        val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.getActivity(this, 0, intent, FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE)
-        } else {
-            PendingIntent.getActivity(this, 0, intent, FLAG_UPDATE_CURRENT)
-        }
         val notification = notificationBuilder
             .setOngoing(true)
             .setSmallIcon(R.mipmap.ic_stat_logo)
@@ -937,7 +928,7 @@ class MainService : Service() {
             .setContentTitle(DEFAULT_NOTIFY_TITLE)
             .setContentText(translate(DEFAULT_NOTIFY_TEXT))
             .setOnlyAlertOnce(true)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(null)
             .setColor(ContextCompat.getColor(this, R.color.primary))
             .setWhen(System.currentTimeMillis())
             .build()

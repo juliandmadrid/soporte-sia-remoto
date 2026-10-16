@@ -1,7 +1,6 @@
 package com.carriez.flutter_hbb
 
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.res.Configuration
@@ -300,33 +299,19 @@ class FloatingWindowService : Service(), View.OnTouchListener {
         }
     }
 
+     // Soporte SIA: la burbuja ya no abre la app ("Show RustDesk") ni detiene el servicio ("Stop service").
+     // Un guarda tocaba "Detener servicio" y dejaba el equipo sin remoto (16 oct). Solo queda el portapapeles.
      private fun showPopupMenu() {
-         val popupMenu = PopupMenu(this, floatingView)
-         val idShowRustDesk = 0
-         popupMenu.menu.add(0, idShowRustDesk, 0, translate("Show RustDesk"))
          // For host side, clipboard sync
          val idSyncClipboard = 1
          val isServiceSyncEnabled = (MainActivity.rdClipboardManager?.isCaptureStarted ?: false) && FFI.isServiceClipboardEnabled()
-         if (isServiceSyncEnabled) {
-             popupMenu.menu.add(0, idSyncClipboard, 0, translate("Update client clipboard"))
-         }
-         val idStopService = 2
-         val hideStopService = FFI.getBuildinOption("hide-stop-service") == "Y"
-         if (!hideStopService) {
-             popupMenu.menu.add(0, idStopService, 0, translate("Stop service"))
-         }
+         if (!isServiceSyncEnabled) return
+         val popupMenu = PopupMenu(this, floatingView)
+         popupMenu.menu.add(0, idSyncClipboard, 0, translate("Update client clipboard"))
          popupMenu.setOnMenuItemClickListener { menuItem ->
              when (menuItem.itemId) {
-                 idShowRustDesk -> {
-                     openMainActivity()
-                     true
-                 }
                 idSyncClipboard -> {
                      syncClipboard()
-                     true
-                 }
-                 idStopService -> {
-                     stopMainService()
                      true
                  }
                  else -> false
@@ -339,26 +324,8 @@ class FloatingWindowService : Service(), View.OnTouchListener {
      }
 
 
-    private fun openMainActivity() {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
-        )
-        try {
-            pendingIntent.send()
-        } catch (e: PendingIntent.CanceledException) {
-            e.printStackTrace()
-        }
-    }
-
     private fun syncClipboard() {
         MainActivity.rdClipboardManager?.syncClipboard(false)
-    }
-
-    private fun stopMainService() {
-        MainActivity.flutterMethodChannel?.invokeMethod("stop_service", null)
     }
 
     enum class KeepScreenOn {
