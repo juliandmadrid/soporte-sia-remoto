@@ -587,7 +587,12 @@ impl Connection {
             tx_to_cm,
             authorized: false,
             unauthorized_id: Some(unauthorized),
-            keyboard: Self::permission(keys::OPTION_ENABLE_KEYBOARD, &control_permissions),
+            // Soporte SIA: en Android el teclado se da siempre al entrar. Quien decide si se puede tocar
+            // es el Agente SIA, que prende/apaga el InputService con la sesion. La opcion guardada la
+            // escribe solo la UI Flutter: si no esta viva (ColorOS la mata) queda en "N" y el cliente
+            // del CELULAR entraba en solo ver (sin teclado ni llave), Altamira Porteria 5, 10 nov.
+            keyboard: cfg!(target_os = "android")
+                || Self::permission(keys::OPTION_ENABLE_KEYBOARD, &control_permissions),
             clipboard: Self::permission(keys::OPTION_ENABLE_CLIPBOARD, &control_permissions),
             audio: Self::permission(keys::OPTION_ENABLE_AUDIO, &control_permissions),
             // to-do: make sure is the option correct here
